@@ -138,15 +138,24 @@ class CustomCallback(BaseCallback):
         self.logger.record('pool/best_ic_ret', self.pool.best_ic_ret)
         self.logger.record('pool/eval_cnt', self.pool.eval_cnt)
         n_days = sum(calculator.data.n_days for calculator in self.test_calculators)
-        ic_test_mean, rank_ic_test_mean = 0., 0.
+        ic_test_mean, rank_ic_test_mean, icir_test_mean, rank_icir_test_mean = 0., 0., 0., 0.
         for i, test_calculator in enumerate(self.test_calculators, start=1):
-            ic_test, rank_ic_test = self.pool.test_ensemble(test_calculator)
+            ic_test, icir_test, rank_ic_test, rank_icir_test = test_calculator.calc_pool_all_ret_with_ir(
+                self.pool.exprs[:self.pool.size], 
+                self.pool.weights
+            )
             ic_test_mean += ic_test * test_calculator.data.n_days / n_days
             rank_ic_test_mean += rank_ic_test * test_calculator.data.n_days / n_days
+            icir_test_mean += icir_test * test_calculator.data.n_days / n_days
+            rank_icir_test_mean += rank_icir_test * test_calculator.data.n_days / n_days
             self.logger.record(f'test/ic_{i}', ic_test)
             self.logger.record(f'test/rank_ic_{i}', rank_ic_test)
+            self.logger.record(f'test/icir_{i}', icir_test)
+            self.logger.record(f'test/rank_icir_{i}', rank_icir_test)
         self.logger.record(f'test/ic_mean', ic_test_mean)
         self.logger.record(f'test/rank_ic_mean', rank_ic_test_mean)
+        self.logger.record(f'test/icir_mean', icir_test_mean)
+        self.logger.record(f'test/rank_icir_mean', rank_icir_test_mean)
         
         # Record metrics for report
         self.metrics_history.append({
@@ -155,7 +164,9 @@ class CustomCallback(BaseCallback):
             'pool_significant': int((np.abs(self.pool.weights[:self.pool.size]) > 1e-4).sum()),
             'best_ic_ret': float(self.pool.best_ic_ret),
             'ic_test_mean': float(ic_test_mean),
-            'rank_ic_test_mean': float(rank_ic_test_mean)
+            'rank_ic_test_mean': float(rank_ic_test_mean),
+            'icir_test_mean': float(icir_test_mean),
+            'rank_icir_test_mean': float(rank_icir_test_mean)
         })
         
         self.save_checkpoint()
@@ -297,7 +308,9 @@ class CustomCallback(BaseCallback):
                 'pool_size': self.pool.size,
                 'best_ic_ret': float(self.pool.best_ic_ret),
                 'final_ic_test_mean': self.metrics_history[-1]['ic_test_mean'] if self.metrics_history else 0.0,
-                'final_rank_ic_test_mean': self.metrics_history[-1]['rank_ic_test_mean'] if self.metrics_history else 0.0
+                'final_rank_ic_test_mean': self.metrics_history[-1]['rank_ic_test_mean'] if self.metrics_history else 0.0,
+                'final_icir_test_mean': self.metrics_history[-1]['icir_test_mean'] if self.metrics_history else 0.0,
+                'final_rank_icir_test_mean': self.metrics_history[-1]['rank_icir_test_mean'] if self.metrics_history else 0.0
             },
             'metrics_history': self.metrics_history,
             'alphas': [
@@ -370,7 +383,9 @@ class CustomCallback(BaseCallback):
                 'pool_size': self.pool.size,
                 'best_ic_ret': float(self.pool.best_ic_ret),
                 'final_ic_test_mean': self.metrics_history[-1]['ic_test_mean'] if self.metrics_history else 0.0,
-                'final_rank_ic_test_mean': self.metrics_history[-1]['rank_ic_test_mean'] if self.metrics_history else 0.0
+                'final_rank_ic_test_mean': self.metrics_history[-1]['rank_ic_test_mean'] if self.metrics_history else 0.0,
+                'final_icir_test_mean': self.metrics_history[-1]['icir_test_mean'] if self.metrics_history else 0.0,
+                'final_rank_icir_test_mean': self.metrics_history[-1]['rank_icir_test_mean'] if self.metrics_history else 0.0
             },
             'metrics_history': self.metrics_history,
             'alphas': [

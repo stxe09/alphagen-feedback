@@ -15,7 +15,7 @@ def run_batch_experiments(
     alphagpt_init: bool = False,
     use_llm: bool = False,
     drop_rl_n: int = 5,
-    steps: int = None,
+    steps: int = 200_000,
     llm_every_n_steps: int = 25000,
     feedback_loop: bool = False,
     feedback_iter: int = 3,
@@ -50,6 +50,8 @@ def run_batch_experiments(
     results = {
         'ic_test': [],
         'rank_ic_test': [],
+        'icir_test': [],
+        'rank_icir_test': [],
     }
     
     # Run experiment 10 times
@@ -77,7 +79,10 @@ def run_batch_experiments(
         if metrics:
             results['ic_test'].append(metrics['ic_test'])
             results['rank_ic_test'].append(metrics['rank_ic_test'])
-            print(f"[Batch] Extracted - IC: {metrics['ic_test']:.6f}, Rank IC: {metrics['rank_ic_test']:.6f}")
+            results['icir_test'].append(metrics['icir_test'])
+            results['rank_icir_test'].append(metrics['rank_icir_test'])
+            print(f"[Batch] Extracted - IC: {metrics['ic_test']:.6f}, Rank IC: {metrics['rank_ic_test']:.6f}, "
+                  f"ICIR: {metrics['icir_test']:.6f}, Rank ICIR: {metrics['rank_icir_test']:.6f}")
     
     # Compute and report statistics
     _report_batch_statistics(results, random_seeds, pool_capacity, instruments, use_llm, feedback_loop)
@@ -105,6 +110,8 @@ def _extract_latest_metrics(seed: int) -> dict:
         return {
             'ic_test': final_metrics.get('final_ic_test_mean', 0.0),
             'rank_ic_test': final_metrics.get('final_rank_ic_test_mean', 0.0),
+            'icir_test': final_metrics.get('final_icir_test_mean', 0.0),
+            'rank_icir_test': final_metrics.get('final_rank_icir_test_mean', 0.0),
         }
     except Exception as e:
         print(f"[Error] Failed to extract metrics from {latest_file}: {e}")
@@ -129,6 +136,8 @@ def _report_batch_statistics(results, seeds, pool_capacity, instruments, use_llm
     metrics_summary = {
         'IC': results['ic_test'],
         'Rank IC': results['rank_ic_test'],
+        'ICIR': results['icir_test'],
+        'Rank ICIR': results['rank_icir_test'],
     }
     
     for metric_name, values in metrics_summary.items():
@@ -167,6 +176,16 @@ def _report_batch_statistics(results, seeds, pool_capacity, instruments, use_llm
             'mean': float(np.mean(results['rank_ic_test'])),
             'std': float(np.std(results['rank_ic_test'])),
             'values': [float(v) for v in results['rank_ic_test']]
+        },
+        'icir_test': {
+            'mean': float(np.mean(results['icir_test'])),
+            'std': float(np.std(results['icir_test'])),
+            'values': [float(v) for v in results['icir_test']]
+        },
+        'rank_icir_test': {
+            'mean': float(np.mean(results['rank_icir_test'])),
+            'std': float(np.std(results['rank_icir_test'])),
+            'values': [float(v) for v in results['rank_icir_test']]
         }
     }
     
