@@ -409,10 +409,11 @@ def run_single_experiment(
     llm_replace_n: int = 3,
     feedback_loop: bool = False,
     feedback_iter: int = 3,
-    feedback_mode: str = "full"
+    feedback_mode: str = "full",
+    qlib_data_path: str = "~/.qlib/qlib_data/cn_data"
 ):
     reseed_everything(seed)
-    initialize_qlib("~/.qlib/qlib_data/cn_data")
+    initialize_qlib(qlib_data_path)
 
     llm_replace_n = 0 if not use_llm else llm_replace_n
     print(f"""[Main] Starting training process
@@ -597,7 +598,8 @@ def main(
     llm_every_n_steps: int = 25000,
     feedback_loop: bool = False,
     feedback_iter: int = 3,
-    feedback_mode: str = "full"
+    feedback_mode: str = "full",
+    qlib_data_path: str = "~/.qlib/qlib_data/cn_data"
 ):
     """
     :param random_seeds: Random seeds
@@ -632,7 +634,8 @@ def main(
             llm_every_n_steps=llm_every_n_steps,
             feedback_loop=feedback_loop,
             feedback_iter=feedback_iter,
-            feedback_mode=feedback_mode
+            feedback_mode=feedback_mode,
+            qlib_data_path=qlib_data_path
         )
 
 
