@@ -15,7 +15,7 @@ def run_batch_experiments(
     alphagpt_init: bool = False,
     use_llm: bool = False,
     drop_rl_n: int = 5,
-    steps: int = 200_000,
+    steps: int = 250_000,
     llm_every_n_steps: int = 25000,
     feedback_loop: bool = False,
     feedback_iter: int = 3,

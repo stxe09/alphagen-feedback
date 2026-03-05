@@ -416,7 +416,7 @@ def run_single_experiment(
     seed: int = 0,
     instruments: str = "csi300",
     pool_capacity: int = 20,
-    steps: int = 200_000,
+    steps: int = 250_000,
     alphagpt_init: bool = False,
     use_llm: bool = False,
     llm_every_n_steps: int = 25_000,
