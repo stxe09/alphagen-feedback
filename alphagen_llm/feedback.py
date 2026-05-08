@@ -241,7 +241,8 @@ def run_feedback_loop_on_alphas(
         feedback_iter: int = 2,
         parser=None,
         test_calculators=None,
-        llm_alpha_stats=None
+        llm_alpha_stats=None,
+        feedback_mode: str = "full"
     ) -> List[Expression]:
     """
     Run feedback loop on alphas.
@@ -312,21 +313,24 @@ def run_feedback_loop_on_alphas(
                 print(f"[FEEDBACK LOOP] Improved alpha failed to parse: {improved_str}")
                 # Record as invalid improvement before trying to fix
                 if llm_alpha_stats is not None:
-                    llm_alpha_stats['improvement']['invalid'] += 1
+                    record_llm_alpha(llm_alpha_stats, 'improvement', valid=False, fixed=False, expr=improved_expr)
                 
-                fixed_str = call_fixer_llm(chat_session, improved_str, parse_error)
-                fixed_exprs, _ = safe_parse(parser, fixed_str)
-                if fixed_exprs is None:
-                    # If improvement failed to parse and fix, keep original if it was at least valid
-                    print(f"[FEEDBACK LOOP] Improved alpha failed to fix: {improved_str} -> {fixed_str}")
+                if feedback_mode == "improve-only":
+                    print(f"[FEEDBACK LOOP] Improve-only mode: skipping fix for {improved_str}")
                     next_candidates.append(alpha_expr)
                 else:
-                    next_candidates.append(fixed_exprs)
-                    fixed_in_round += 1
-                    # Record as fixed improvement
-                    if llm_alpha_stats is not None:
-                        record_llm_alpha(llm_alpha_stats, 'improvement', valid=True, fixed=True, expr=fixed_exprs)
-                        llm_alpha_stats['improvement']['fixed'] += 1
+                    fixed_str = call_fixer_llm(chat_session, improved_str, parse_error)
+                    fixed_exprs, _ = safe_parse(parser, fixed_str)
+                    if fixed_exprs is None:
+                        # If improvement failed to parse and fix, keep original if it was at least valid
+                        print(f"[FEEDBACK LOOP] Improved alpha failed to fix: {improved_str} -> {fixed_str}")
+                        next_candidates.append(alpha_expr)
+                    else:
+                        next_candidates.append(fixed_exprs)
+                        fixed_in_round += 1
+                        # Record as fixed improvement
+                        if llm_alpha_stats is not None:
+                            record_llm_alpha(llm_alpha_stats, 'improvement', valid=True, fixed=True, expr=fixed_exprs)
         
         print(f"[FEEDBACK LOOP] Round {round_i + 1} complete: Fixed={fixed_in_round}, Improved={improved_in_round}")        
         # Convert back to strings for next iteration (except last round)

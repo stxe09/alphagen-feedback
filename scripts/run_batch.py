@@ -36,7 +36,7 @@ def run_batch_experiments(
     :param feedback_mode: Type of feedback loop - 'full' or 'fix-only'
     """
     # Fixed random seeds for 10 runs
-    random_seeds = tuple(range(0, 10))
+    random_seeds = range(0, 8)
     
     print(f"""[Batch Runner] Starting batch experiments
     Number of runs: {len(random_seeds)}
@@ -85,7 +85,7 @@ def run_batch_experiments(
                   f"ICIR: {metrics['icir_test']:.6f}, Rank ICIR: {metrics['rank_icir_test']:.6f}")
     
     # Compute and report statistics
-    _report_batch_statistics(results, random_seeds, pool_capacity, instruments, use_llm, feedback_loop)
+    _report_batch_statistics(results, random_seeds, pool_capacity, instruments, use_llm, feedback_loop, llm_every_n_steps, drop_rl_n, feedback_iter, feedback_mode)
 
 
 def _extract_latest_metrics(seed: int) -> dict:

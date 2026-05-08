@@ -18,7 +18,7 @@ class FeedbackInteraction(DefaultInteraction):
 	def __init__(self, *args, feedback_iter: int = 3, feedback_mode: str = "full", llm_alpha_stats = None, **kwargs):
 		"""Initialize with feedback_iter, feedback_mode and llm_alpha_stats parameters; all other args/kwargs passed to DefaultInteraction.
 		
-		feedback_mode: "full" for critique/fix/improve loop, "fix-only" for syntax fixing only
+		feedback_mode: "full" for critique/fix/improve loop, "fix-only" for syntax fixing only, "improve-only" for improving valid alphas without fixing
 		llm_alpha_stats: Optional dictionary to track valid/invalid alphas (passed to parent DefaultInteraction)
 		"""
 		# Pass llm_alpha_stats to parent DefaultInteraction
@@ -41,7 +41,7 @@ class FeedbackInteraction(DefaultInteraction):
 		
 		# Try to fix invalid alphas
 		fixed_exprs = []
-		if len(invalid) != 0:
+		if len(invalid) != 0 and self.feedback_mode != "improve-only":
 			self._client.log_message(("script", f"Invalid expressions: {len(invalid)}"))
 			print(f"[FEEDBACK] Found {len(invalid)} invalid alphas in _chat_and_parse, attempting to fix...")
 			for invalid_str, error_msg in invalid:
@@ -50,10 +50,9 @@ class FeedbackInteraction(DefaultInteraction):
 				fixed_expr, _ = safe_parse(self._parser, fixed_str)
 				if fixed_expr is not None:
 					fixed_exprs.append(fixed_expr)
-					# Record as fixed, and increment fixed counter
+					# Record as fixed
 					if self._llm_alpha_stats is not None:
 						record_llm_alpha(self._llm_alpha_stats, 'original', valid=True, fixed=True, expr=fixed_expr)
-						self._llm_alpha_stats['original']['fixed'] += 1
 					print(f"[FEEDBACK] Fixed: {invalid_str} -> {fixed_str}")
 		
 		self._client.reset()  
@@ -87,7 +86,7 @@ class FeedbackInteraction(DefaultInteraction):
 			self._llm_alpha_stats['original']['invalid'] += len(invalid_with_errors)
 		
 		# Fix invalid alphas using the fixer LLM
-		if len(invalid_with_errors) > 0:
+		if len(invalid_with_errors) > 0 and self.feedback_mode != "improve-only":
 			print(f"[FEEDBACK-INIT] Attempting to fix {len(invalid_with_errors)} invalid alphas...")
 			self._client.log_message(("script", f"Found {len(invalid_with_errors)} invalid alphas during initialization, attempting to fix..."))
 			fixed_count = 0
@@ -98,10 +97,9 @@ class FeedbackInteraction(DefaultInteraction):
 				if fixed_expr is not None:
 					valid_exprs.append(fixed_expr)
 					fixed_count += 1
-					# Record as fixed, and increment fixed counter
+					# Record as fixed
 					if self._llm_alpha_stats is not None:
 						record_llm_alpha(self._llm_alpha_stats, 'original', valid=True, fixed=True, expr=fixed_expr)
-						self._llm_alpha_stats['original']['fixed'] += 1
 					print(f"[FEEDBACK-INIT] Successfully fixed: {invalid_str} -> {fixed_str}")
 					self._client.log_message(("script", f"Fixed invalid alpha: {invalid_str} -> {fixed_str}"))
 			print(f"[FEEDBACK-INIT] Fixed {fixed_count}/{len(invalid_with_errors)} invalid alphas")
@@ -158,7 +156,7 @@ class FeedbackInteraction(DefaultInteraction):
 		# Run feedback loop on the generated alphas
 		print(f"[FEEDBACK] Starting feedback loop (mode={self.feedback_mode}, iter={self.feedback_iter})")
 		print(f"[FEEDBACK] Generated {len(exprs)} candidate alphas for feedback processing: {exprs}")
-		if self.feedback_mode == "full":
+		if self.feedback_mode in ("full", "improve-only"):
 			final_exprs = run_feedback_loop_on_alphas(
 				# Only contains valid + fixed expressions
 				initial_alphas=exprs,
@@ -168,6 +166,7 @@ class FeedbackInteraction(DefaultInteraction):
 				feedback_iter=self.feedback_iter,
 				parser=self._parser,
 				llm_alpha_stats=self._llm_alpha_stats,
+				feedback_mode=self.feedback_mode
 			)
 			print(f"[FEEDBACK] Feedback loop complete. {len(final_exprs)} final alphas after processing")
 		else: 

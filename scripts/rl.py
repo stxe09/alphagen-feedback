@@ -632,7 +632,7 @@ def main(
     if isinstance(random_seeds, int):
         random_seeds = (random_seeds, )
     default_steps = {
-        10: 28_000,
+        10: 5_000,
         20: 250_000,
         50: 300_000,
         100: 350_000
