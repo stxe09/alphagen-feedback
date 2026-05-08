@@ -24,6 +24,7 @@ def analyze_full_feedback_stats():
 
     for folder_name in os.listdir(results_dir):
         folder_path = os.path.join(results_dir, folder_name)
+        # improve only TODO: edit
         if not os.path.isdir(folder_path) or 'improve-only' not in folder_name or 'csi300_20' not in folder_name:
             continue
 
